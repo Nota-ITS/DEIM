@@ -1,8 +1,11 @@
-torch>=2.0.1
-torchvision>=0.15.2
+--extra-index-url https://download.pytorch.org/whl/cu117
+torch==2.0.1
+--extra-index-url https://download.pytorch.org/whl/cu117
+torchvision==0.15.2
 faster-coco-eval>=1.6.5
 PyYAML
 tensorboard
 scipy
 calflops
 transformers
+mlflow
