@@ -37,6 +37,13 @@ def main(args, ) -> None:
     update_dict = yaml_utils.parse_cli(args.update)
     update_dict.update({k: v for k, v in args.__dict__.items() \
         if k not in ['update', ] and v is not None})
+    
+    update_dict.update({"mlflow": args.mlflow})
+    if args.mlflow:
+        assert args.mlflow_tracking_uri is not None, 'mlflow tracking uri is required'
+        update_dict.update({"mlflow_tracking_uri": args.mlflow_tracking_uri})
+        assert args.mlflow_experiment_name is not None, 'mlflow experiment name is required'
+        update_dict.update({"mlflow_experiment_name": args.mlflow_experiment_name})
 
     cfg = YAMLConfig(args.config, **update_dict)
 
@@ -70,6 +77,9 @@ if __name__ == '__main__':
     parser.add_argument('--output-dir', type=str, help='output directoy')
     parser.add_argument('--summary-dir', type=str, help='tensorboard summry')
     parser.add_argument('--test-only', action='store_true', default=False,)
+    parser.add_argument('--mlflow', action='store_true', default=False, help='use mlflow to log')
+    parser.add_argument('--mlflow-tracking-uri', type=str, default=None, help='mlflow tracking uri')
+    parser.add_argument('--mlflow-experiment-name', type=str, default=None, help='mlflow experiment name')
 
     # priority 1
     parser.add_argument('-u', '--update', nargs='+', help='update yaml config')

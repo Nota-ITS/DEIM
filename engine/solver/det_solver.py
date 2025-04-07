@@ -11,6 +11,7 @@ import json
 import datetime
 
 import torch
+import mlflow
 
 from ..misc import dist_utils, stats
 
@@ -87,7 +88,8 @@ class DetSolver(BaseSolver):
                 ema=self.ema, 
                 scaler=self.scaler, 
                 lr_warmup_scheduler=self.lr_warmup_scheduler,
-                writer=self.writer
+                writer=self.writer,
+                mlflow=self.mlflow,
             )
 
             if not self.self_lr_scheduler:  # update by epoch 
@@ -119,6 +121,10 @@ class DetSolver(BaseSolver):
                 if self.writer and dist_utils.is_main_process():
                     for i, v in enumerate(test_stats[k]):
                         self.writer.add_scalar(f'Test/{k}_{i}'.format(k), v, epoch)
+                
+                if self.mlflow and dist_utils.is_main_process():
+                    for i, v in enumerate(test_stats[k]):
+                        mlflow.log_metric(f'Test/{k}_{i}'.format(k), v, epoch)
 
                 if k in best_stat:
                     best_stat['epoch'] = epoch if test_stats[k][0] > best_stat[k] else best_stat['epoch']

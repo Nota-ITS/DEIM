@@ -12,6 +12,7 @@ import math
 from typing import Iterable
 
 import torch
+import mlflow
 import torch.amp
 from torch.utils.tensorboard import SummaryWriter
 from torch.cuda.amp.grad_scaler import GradScaler
@@ -32,6 +33,8 @@ def train_one_epoch(self_lr_scheduler, lr_scheduler, model: torch.nn.Module, cri
 
     print_freq = kwargs.get('print_freq', 10)
     writer :SummaryWriter = kwargs.get('writer', None)
+    mf = kwargs.get('mlflow', False)
+    print(mf)
 
     ema :ModelEMA = kwargs.get('ema', None)
     scaler :GradScaler = kwargs.get('scaler', None)
@@ -115,6 +118,13 @@ def train_one_epoch(self_lr_scheduler, lr_scheduler, model: torch.nn.Module, cri
                 writer.add_scalar(f'Lr/pg_{j}', pg['lr'], global_step)
             for k, v in loss_dict_reduced.items():
                 writer.add_scalar(f'Loss/{k}', v.item(), global_step)
+        
+        if mf and dist_utils.is_main_process() and global_step % 10 == 0:
+            mlflow.log_metric('Loss/total', loss_value.item(), global_step)
+            for j, pg in enumerate(optimizer.param_groups):
+                mlflow.log_metric(f'Lr/pg_{j}', pg['lr'], global_step)
+            for k, v in loss_dict_reduced.items():
+                mlflow.log_metric(f'Loss/{k}', v.item(), global_step)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()

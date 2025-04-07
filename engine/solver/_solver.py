@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 import atexit
+import mlflow
 
 from ..misc import dist_utils
 from ..core import BaseConfig
@@ -67,11 +68,19 @@ class BaseSolver(object):
         self.output_dir = Path(cfg.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.writer = cfg.writer
+        self.mlflow = cfg.yaml_cfg["mlflow"]
 
         if self.writer:
             atexit.register(self.writer.close)
             if dist_utils.is_main_process():
                 self.writer.add_text('config', '{:s}'.format(cfg.__repr__()), 0)
+
+        if self.mlflow:
+            if dist_utils.is_main_process():
+                mlflow.set_tracking_uri(cfg.yaml_cfg["mlflow_tracking_uri"])
+                mlflow.set_experiment(cfg.yaml_cfg["mlflow_experiment_name"])
+                mlflow.start_run()
+                mlflow.log_params(cfg.__dict__)
 
     def cleanup(self):
         if self.writer:
